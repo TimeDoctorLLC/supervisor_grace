@@ -5,13 +5,14 @@ from supervisor.states import STOPPED_STATES
 from supervisor.xmlrpc import Faults as SupervisorFaults
 from supervisor.xmlrpc import RPCError
 import supervisor.loggers
+import json
 
 API_VERSION = '1.0'
 
 class Faults:
     NOT_IN_WHITELIST = 230
 
-class TwiddlerNamespaceRPCInterface:
+class GraceNamespaceRPCInterface:
     """ A supervisor rpc interface that facilitates manipulation of
     supervisor's configuration and state in ways that are not
     normally accessible at runtime.
@@ -113,6 +114,67 @@ class TwiddlerNamespaceRPCInterface:
 
         return True
 
+    def UpdateNumprocs(self, group_name):
+        """ graceful process_group numprocs without restart all process when only numprocs changed.
+            if numprocs increased, the operation will start (new_num - old_num) processes,
+            if numprocs reduced, the operation will stop the last (new_num - old_num) processes
+            @param string group_name Name of an existing process group
+        """
+
+        try:
+            self.supervisord.options.process_config(do_usage=False)
+        except ValueError as msg:
+            raise RPCError(Faults.CANT_REREAD, msg)
+
+        group = self._getProcessGroup(group_name)
+        old_config = self.supervisord.process_groups[group_name]
+        new_config = [ cfg
+            for cfg in self.superviosrd.options.process_group_configs if cfg.name == group.name
+        ][0]
+        if old_config == new_config:
+            return "No need to update"
+        else:
+            if old_config.name != new_config.name or \
+            old_config.priority != new_config.priority:
+                return "Not only numprocs has changed"
+            new_process_configs_set = set(new_config.process_configs)
+            old_process_configs_set = set(old_config.process_configs)
+            if len(old_config.process_configs) > len(new_config.process_config):
+                if new_process_configs_set.issubset(old_process_configs_set):
+                    self._add_num(group_name, new_process_configs_set - old_process_configs_set)
+                else:
+                    return "Not only numprocs has chnaged"
+            elif len(old_process_configs_set) < len(new_process_configs_set):
+                if old_process_configs_set.issubset(new_process_configs_set):
+                    self._reduce_num(group_name, old_process_configs_set - new_process_configs_set)
+                else:
+                    return "Not only numprocs has changed"
+
+    # just return the processes need to remove, let
+    # supervisorctl call supervisor to stop the processes
+    def _reduce_num(group_name, process_configs):
+        return json.dumps({
+            'processes_name' : [p.name for p in process_configs],
+            'type' : 'reduce'
+        })
+
+    def _add_num(group_name, new_configs):
+        group = self._getProcessGroup(group_name)
+        group.config.process_configs.extend(new_configs)
+
+        for new_config in new_configs:
+            # the process group config already exists and its after_setuid hook
+            # will not be called again to make the auto child logs for this process.
+            new_config.create_autochildlogs()
+
+            # add process instance
+            group.processes[new_config.name] = new_config.make_process(group)
+        return json.dumps({
+            'processes_name' : [p.name for p in process_configs],
+            'type' : 'reduce'
+        })
+
+
     def removeProcessFromGroup(self, group_name, process_name):
         """ Remove a process from a process group.  When a program is added with
             addProgramToGroup(), one or more processes for that program is added
@@ -131,8 +193,11 @@ class TwiddlerNamespaceRPCInterface:
         process = group.processes.get(process_name)
         if process is None:
             raise RPCError(SupervisorFaults.BAD_NAME, process_name)
+
+        """ Change to stop process here instead of raise an error
+        """
         if process.pid or process.state not in STOPPED_STATES:
-            raise RPCError(SupervisorFaults.STILL_RUNNING, process_name)
+            process.stop()
 
         group.transition()
 
@@ -164,5 +229,5 @@ class TwiddlerNamespaceRPCInterface:
             raise RPCError(SupervisorFaults.INCORRECT_PARAMETERS)
         return config
 
-def make_twiddler_rpcinterface(supervisord, **config):
-    return TwiddlerNamespaceRPCInterface(supervisord, **config)
+def make_grace_rpcinterface(supervisord, **config):
+    return GraceNamespaceRPCInterface(supervisord, **config)

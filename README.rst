@@ -185,17 +185,8 @@ Log levels are defined in the supervisor.loggers module and at the time of
 writing are: `CRIT` (50), `ERRO` (40), `WARN` (30), `INFO` (20), `DEBG` (10),
 `TRAC` (5), and `BLAT` (3).
 
-Warnings
---------
-
-Any changes to the supervisord runtime configuration will not be persisted
-after Supervisor is shut down.
-
-Your Supervisor instance should never be exposed to the outside world. With
-supervisor_twiddler, anyone with access to the API has the ability to run
-arbitrary commands on the server.
-
 Author
 ------
 
-`Mike Naberezny <http://github.com/mnaberez>`_
+`wgjak47 <http://github.com/wgjak47>`
+`This project forked from mnaberez/supervisor_twiddler`

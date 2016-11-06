@@ -7,10 +7,10 @@ py_version = sys.version_info[:2]
 
 if py_version < (2, 6):
     raise RuntimeError(
-        'On Python 2, supervisor_twiddler requires Python 2.6 or later')
+        'On Python 2, supervisor_numplus requires Python 2.6 or later')
 elif (3, 0) < py_version < (3, 2):
     raise RuntimeError(
-        'On Python 3, supervisor_twiddler requires Python 3.2 or later')
+        'On Python 3, supervisor_numplus requires Python 3.2 or later')
 
 tests_require = []
 if py_version < (3, 3):
@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 DESC = """\
-supervisor_twiddler is an RPC extension for Supervisor that allows
+supervisor_numplus is an RPC extension for Supervisor that allows
 Supervisor's configuration and state to be manipulated in ways that are not
 normally possible at runtime."""
 
@@ -43,22 +43,22 @@ CLASSIFIERS = [
     ]
 
 setup(
-    name = 'supervisor_twiddler',
+    name = 'supervisor_numplus',
     version = __version__,
     license = 'License :: OSI Approved :: BSD License',
-    url = 'http://github.com/mnaberez/supervisor_twiddler',
-    description = "supervisor_twiddler RPC extension for Supervisor",
+    url = 'http://github.com/wgjak47/supervisor_numplus',
+    description = "supervisor_numplus RPC extension for Supervisor",
     long_description= DESC,
     classifiers = CLASSIFIERS,
-    author = "Mike Naberezny",
-    author_email = "mike@naberezny.com",
-    maintainer = "Mike Naberezny",
-    maintainer_email = "mike@naberezny.com",
+    author = "wgjak47",
+    author_email = "ak47m61@gmail.com",
+    maintainer = "wgjak47",
+    maintainer_email = "ak47m61@gmail.com.com",
     packages = find_packages(),
     install_requires = ['supervisor >= 3.0a10'],
     tests_require = tests_require,
     include_package_data = True,
     zip_safe = False,
-    namespace_packages = ['supervisor_twiddler'],
-    test_suite = 'supervisor_twiddler.tests'
+    namespace_packages = ['supervisor_numplus'],
+    test_suite = 'supervisor_numplus.tests'
 )
