@@ -43,11 +43,11 @@ CLASSIFIERS = [
     ]
 
 setup(
-    name = 'supervisor_numplus',
+    name = 'supervisor_grace',
     version = __version__,
     license = 'License :: OSI Approved :: BSD License',
-    url = 'http://github.com/wgjak47/supervisor_numplus',
-    description = "supervisor_numplus RPC extension for Supervisor",
+    url = 'http://github.com/wgjak47/supervisor_grace',
+    description = "supervisor_grace RPC extension for Supervisor",
     long_description= DESC,
     classifiers = CLASSIFIERS,
     author = "wgjak47",
@@ -56,9 +56,7 @@ setup(
     maintainer_email = "ak47m61@gmail.com.com",
     packages = find_packages(),
     install_requires = ['supervisor >= 3.0a10'],
-    tests_require = tests_require,
     include_package_data = True,
     zip_safe = False,
-    namespace_packages = ['supervisor_numplus'],
-    test_suite = 'supervisor_numplus.tests'
+    namespace_packages = ['supervisor_grace'],
 )

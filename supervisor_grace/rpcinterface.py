@@ -127,38 +127,55 @@ class GraceNamespaceRPCInterface:
             raise RPCError(Faults.CANT_REREAD, msg)
 
         group = self._getProcessGroup(group_name)
-        old_config = self.supervisord.process_groups[group_name]
+        old_config = self.supervisord.process_groups[group_name].config
         new_config = [ cfg
-            for cfg in self.superviosrd.options.process_group_configs if cfg.name == group.name
+            for cfg in self.supervisord.options.process_group_configs if cfg.name == group_name
         ][0]
         if old_config == new_config:
             return "No need to update"
         else:
             if old_config.name != new_config.name or \
             old_config.priority != new_config.priority:
-                return "Not only numprocs has changed"
-            new_process_configs_set = set(new_config.process_configs)
-            old_process_configs_set = set(old_config.process_configs)
-            if len(old_config.process_configs) > len(new_config.process_config):
-                if new_process_configs_set.issubset(old_process_configs_set):
-                    self._add_num(group_name, new_process_configs_set - old_process_configs_set)
+                return "Not only numprocs has changed: priority"
+            new_process_configs = new_config.process_configs
+            old_process_configs = old_config.process_configs
+            if len(old_process_configs) < len(new_process_configs):
+                if self._issubset(old_process_configs, new_process_configs):
+                    return self._add_num(group_name, self._difference(new_process_configs, old_process_configs))
                 else:
-                    return "Not only numprocs has chnaged"
-            elif len(old_process_configs_set) < len(new_process_configs_set):
-                if old_process_configs_set.issubset(new_process_configs_set):
-                    self._reduce_num(group_name, old_process_configs_set - new_process_configs_set)
+                    self.log("somethings wrong")
+                    return "Not only numprocs has chnaged: increased other"
+            elif len(old_process_configs) > len(new_process_configs):
+                if self._issubset(new_process_configs, old_process_configs):
+                    return self._reduce_num(group_name, self._difference(old_process_configs, new_process_configs))
                 else:
-                    return "Not only numprocs has changed"
+                    return "Not only numprocs has changed: reduce other"
+
+    # ProcessConfig can't use set because __hash__ is not implemented
+    def _difference(self, listA, listB):
+        return [ item for item in listA if not self._has(listB, item) ]
+
+    def _has(self, the_list, A):
+        for item in the_list:
+            if A.__eq__(item):
+                return True
+        return False
+
+    def _issubset(self, A, B):
+        for item in A:
+            if not self._has(B, item):
+                return False
+        return A
 
     # just return the processes need to remove, let
     # supervisorctl call supervisor to stop the processes
-    def _reduce_num(group_name, process_configs):
+    def _reduce_num(self, group_name, process_configs):
         return json.dumps({
             'processes_name' : [p.name for p in process_configs],
             'type' : 'reduce'
         })
 
-    def _add_num(group_name, new_configs):
+    def _add_num(self, group_name, new_configs):
         group = self._getProcessGroup(group_name)
         group.config.process_configs.extend(new_configs)
 
@@ -170,7 +187,7 @@ class GraceNamespaceRPCInterface:
             # add process instance
             group.processes[new_config.name] = new_config.make_process(group)
         return json.dumps({
-            'processes_name' : [p.name for p in process_configs],
+            'processes_name' : [p.name for p in new_configs],
             'type' : 'reduce'
         })
 

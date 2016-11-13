@@ -27,8 +27,7 @@ class GraceControllerPlugin(ControllerPluginBase):
             for process in result['processes_name']:
                 self.grace.removeProcessFromGroup(self, groupName, process)
         elif result['type'] == 'add':
-            for process in result['processes_name']:
-                self.supervisor.startProcess(process)
+            self.ctl.output()
         elif result['type'] == 'error':
             self.ctl.output(result['error_msg'])
 
