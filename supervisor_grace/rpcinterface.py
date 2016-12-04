@@ -132,24 +132,35 @@ class GraceNamespaceRPCInterface:
             for cfg in self.supervisord.options.process_group_configs if cfg.name == group_name
         ][0]
         if old_config == new_config:
-            return "No need to update"
+            return json.dumps({
+                "msg":"No need to update",
+                "type":"error"
+            })
         else:
             if old_config.name != new_config.name or \
             old_config.priority != new_config.priority:
-                return "Not only numprocs has changed: priority"
+                return json.dumps({
+                    "msg":"Not only numprocs has changed: priority is difference",
+                    "type":"error"
+                })
             new_process_configs = new_config.process_configs
             old_process_configs = old_config.process_configs
             if len(old_process_configs) < len(new_process_configs):
                 if self._issubset(old_process_configs, new_process_configs):
                     return self._add_num(group_name, self._difference(new_process_configs, old_process_configs))
                 else:
-                    self.log("somethings wrong")
-                    return "Not only numprocs has chnaged: increased other"
+                    return json.dumps({
+                        "msg": "Not only numprocs has chnaged",
+                        "type": "error"
+                    })
             elif len(old_process_configs) > len(new_process_configs):
                 if self._issubset(new_process_configs, old_process_configs):
                     return self._reduce_num(group_name, self._difference(old_process_configs, new_process_configs))
                 else:
-                    return "Not only numprocs has changed: reduce other"
+                    return json.dumps({
+                        "msg": "Not only numprocs has changed",
+                        "type": "error"
+                    })
 
     # ProcessConfig can't use set because __hash__ is not implemented
     def _difference(self, listA, listB):
@@ -171,7 +182,7 @@ class GraceNamespaceRPCInterface:
     # supervisorctl call supervisor to stop the processes
     def _reduce_num(self, group_name, process_configs):
         return json.dumps({
-            'processes_name' : [p.name for p in process_configs],
+            'processes_name' : ["{0}:{1}".format(group_name,p.name) for p in process_configs],
             'type' : 'reduce'
         })
 
@@ -187,8 +198,8 @@ class GraceNamespaceRPCInterface:
             # add process instance
             group.processes[new_config.name] = new_config.make_process(group)
         return json.dumps({
-            'processes_name' : [p.name for p in new_configs],
-            'type' : 'reduce'
+            'processes_name' : [ "{0}:{1}".format(group_name,p.name) for p in new_configs],
+            'type' : 'add'
         })
 
 
@@ -202,7 +213,6 @@ class GraceNamespaceRPCInterface:
         @param string process_name  Name of the process to remove from group
         @return boolean             Always return True unless error
         """
-        self._update('removeProcessFromGroup')
 
         group = self._getProcessGroup(group_name)
 
@@ -211,10 +221,11 @@ class GraceNamespaceRPCInterface:
         if process is None:
             raise RPCError(SupervisorFaults.BAD_NAME, process_name)
 
+
         """ Change to stop process here instead of raise an error
         """
         if process.pid or process.state not in STOPPED_STATES:
-            process.stop()
+            raise RPCError(SupervisorFaults.STILL_RUNNING, process_name)
 
         group.transition()
 
