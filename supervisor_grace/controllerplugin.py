@@ -20,14 +20,15 @@ class GraceControllerPlugin(ControllerPluginBase):
             return self.help_cache_gupdate()
         groupName = splitted[0]
         result = self.grace.UpdateNumprocs(groupName)
-        self.ctl.output(result)
         result = json.loads(result)
         if result['type'] == 'reduce':
             for process in result['processes_name']:
                 self.supervisor.stopProcess(process)
+                self.ctl.output(process + ' stoped')
             for process in result['processes_name']:
                 process_name = process.split(':')[1]
                 self.grace.removeProcessFromGroup(groupName, process_name)
+                self.ctl.output(process + ' removed')
         # if you set autostart, the added program will autostart
         # otherwise you can start it mannally using supervisorctl start program:*
         elif result['type'] == 'add':
