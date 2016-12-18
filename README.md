@@ -47,7 +47,6 @@ foo:foo_2                        RUNNING   pid 8114, uptime 0:00:05
 But use the grace\_update command will just start the new processes and other processes will not restart:
 ```
 supervisor> grace_update foo
-{"type": "add", "processes_name": ["foo:foo_2"]}
 foo:foo_2 added
 supervisor> status foo:*
 foo:foo_0                        RUNNING   pid 8119, uptime 0:00:20
@@ -57,13 +56,19 @@ foo:foo_2                        RUNNING   pid 8121, uptime 0:00:11
 And in condition of value of numprocs reduced ( reduce to 2 from 3 for example ), the reduced processes will stop and be removed:
 ```
 supervisor> grace_update foo
-{"type": "reduce", "processes_name": ["foo:foo_2"]}
 foo:foo_2 stoped
 foo:foo_2 removed
 supervisor> status foo:*
 foo:foo_0                        RUNNING   pid 8119, uptime 0:05:36
 foo:foo_1                        RUNNING   pid 8120, uptime 0:05:36
 ```
+
+If not noly numprocs has changed(priority changed for example), grace\_update will not do anything but just output a message:
+```
+supervisor> grace_update foo
+Not only numprocs has changed: priority is difference
+```
+I suggest you to use update instead.
 
 Author
 ------

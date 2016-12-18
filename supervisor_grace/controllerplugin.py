@@ -9,9 +9,9 @@ class GraceControllerPlugin(ControllerPluginBase):
         self.supervisor = controller.get_server_proxy('supervisor')
         self.grace = controller.get_server_proxy('grace')
 
-    def help_cache_count(self):
-        self.ctl.output("cache_count\t"
-                        "Get a count of all items in the cache.")
+    def help_grace_update(self):
+        self.ctl.output("grace_update xxx\t"
+                        "grace_update programe xxx")
 
     # do graccupdate
     def do_grace_update(self, args):
