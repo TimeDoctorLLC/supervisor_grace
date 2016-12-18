@@ -24,7 +24,7 @@ supervisor.ctl_factory = supervisor_grace.controllerplugin:make_grace_controller
 You must restart Supervisor for the grace interface to be loaded.
 
 ## Usage
-We use this programe config as an example:
+We use this program config as an example:
 ```
 [program:foo]
 command=ping google.com             ; the program (relative uses PATH, can take args)
@@ -69,6 +69,10 @@ supervisor> grace_update foo
 Not only numprocs has changed: priority is difference
 ```
 I suggest you to use update instead.
+
+
+## TODO
+When program name changed ([program:xxx]), the plugin will error, but not influence the existing program.
 
 Author
 ------
