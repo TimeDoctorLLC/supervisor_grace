@@ -137,8 +137,7 @@ class GraceNamespaceRPCInterface:
                 "type":"error"
             })
         else:
-            if old_config.name != new_config.name or \
-            old_config.priority != new_config.priority:
+            if old_config.name != new_config.name or old_config.priority != new_config.priority:
                 return json.dumps({
                     "msg":"Not only numprocs has changed: priority is difference",
                     "type":"error"
@@ -150,7 +149,7 @@ class GraceNamespaceRPCInterface:
                     return self._add_num(group_name, self._difference(new_process_configs, old_process_configs))
                 else:
                     return json.dumps({
-                        "msg": "Not only numprocs has chnaged",
+                        "msg": "Not only numprocs has changed",
                         "type": "error"
                     })
             elif len(old_process_configs) > len(new_process_configs):
@@ -161,6 +160,15 @@ class GraceNamespaceRPCInterface:
                         "msg": "Not only numprocs has changed",
                         "type": "error"
                     })
+            # If other not only name, priority or numprocs has changed
+            # Return an error
+            else:
+                return json.dumps({
+                    "msg": "Other settings has changed, please use update",
+                    "type": "error"
+                })
+        # Return something for xmlrpc lib
+        return True
 
     # ProcessConfig can't use set because __hash__ is not implemented
     def _difference(self, listA, listB):
